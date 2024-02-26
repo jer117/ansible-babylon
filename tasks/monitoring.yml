@@ -1,0 +1,13 @@
+---
+- name: Task Run Cosmos Validator Watcher Container
+  docker_container:
+    name: cosmos-validator-watcher
+    image: "{{ kiln_monitoring_image }}"
+    state: started
+    auto_remove: false  # Ensure the container is not removed after it stops
+    networks:
+      - name: "babylon-validator-net"
+    command: "--node https://babylon-testnet-rpc.polkachu.com:443 \
+              --node http://babylon:26657 \
+              --validator 8E9C454C7483D0C05A93B6C005B50C47958913B1:nodes.club"
+    detach: true

@@ -1,0 +1,18 @@
+# Host mounts
+tendermint_host_config_mount: "/root/.babylond/config"
+tendermint_host_data_mount: "/data/babylon"
+tendermint_host_wasm_mount: "/root/.babylond/wasm"
+tendermint_host_keys_mount: "/root/.babylond/keyring-test"
+
+tendermint_timeout_commit: "5s"
+tendermint_max_num_inbound_peers: 100
+tendermint_max_num_outbound_peers: 100
+tendermint_recv_rate: 22020096
+tendermint_send_rate: 22020096
+tendermint_flush_throttle_timeout: "10ms"
+
+tendermint_config_files:
+  - config.toml
+  - app.toml
+  - client.toml
+
