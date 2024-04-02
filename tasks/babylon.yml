@@ -1,0 +1,288 @@
+---
+- name: Task create babylon directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  with_items:
+    - "{{ tendermint_host_config_mount }}"
+    - "{{ tendermint_host_data_mount }}"
+    - "{{ tendermint_host_wasm_mount }}"
+    - "{{ tendermint_host_keys_mount }}"
+    - "{{ tendermint_host_config_mount }}/eots"
+    - "{{ tendermint_host_config_mount }}/finality-provider"
+    - "{{ tendermint_host_config_mount }}/finality-provider/keys"
+    - "{{ tendermint_host_data_mount }}"
+    - "{{ tendermint_host_data_mount }}/eots"
+    - "{{ tendermint_host_data_mount }}/finality-provider"
+
+  # Option 1 - Local genesis JSON file (if genesis_file var is passed)
+- name: Task Copy babylon genesis file
+  become_user: root
+  become: true
+  copy:
+    src: "{{ genesis_file }}"
+    dest: "{{ tendermint_host_config_mount }}/genesis.json"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  register: genesis_file_cfg
+  when: genesis_file is defined and genesis_file != ""
+
+# Option 2 - Remote genesis JSON file
+- name: Task Download babylon genesis file
+  get_url:
+    url: "{{ genesis_url }}"
+    dest: "{{ tendermint_host_config_mount }}/genesis.json"
+    owner: "root"
+    group: "root"
+    checksum: "{{ genesis_checksum }}"
+    mode: "0655"
+  register: genesis_cfg
+  tags: [genesis]
+  when: genesis_url is defined and genesis_url != "" and not genesis_is_archive_file
+
+# - name: Task Pull babylon Docker Image
+#   docker_image:
+#     name: jer117/babylon:v11.0.4-1
+#     state: present
+#     force_source: no
+#     ignore_errors: true
+
+- name: Task Render babylon config
+  become_user: root
+  become: true
+  template:
+    src: tendermint/{{ item }}.j2
+    dest: "{{ tendermint_host_config_mount }}/{{ item }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  loop: "{{ tendermint_config_files }}"
+  register: cfg
+
+- name: Task Detect if config has changed
+  set_fact:
+    cfg_changed: "{{ cfg.changed | bool or genesis_cfg.changed | bool }}"
+
+- name: Task Copy helper scripts
+  become_user: root
+  become: true
+  template:
+    src: scripts/{{ item }}.j2
+    dest: /usr/local/bin/{{ item }}
+    force: true
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  with_items:
+    - peers
+    - latest
+    - recover-account
+    - list-accounts
+
+- name: Task Copy tendermint docker helper script
+  become_user: root
+  become: true
+  template:
+    src: scripts/tendermint-container.j2
+    dest: /usr/local/bin/{{ tendermint_binary_name }}
+    force: true
+    owner: "root"
+    group: "root"
+    mode: "0755"
+
+# - name: copy is validator jailed script
+#   become_user: root
+#   become: true
+#   template:
+#     src: scripts/check_val_jailed.j2
+#     dest: /usr/local/bin/check_val_jailed.sh
+#     force: true
+#     owner: "root"
+#     group: "root"
+#     mode: "0755"
+
+# - name: create cron entry for is validator jailed script
+#   cron:
+#     user: "root"
+#     name: check if validator is jailed
+#     minute: "*/15"
+#     hour: "*"
+#     job: /usr/local/bin/check_val_jailed.sh
+#     state: present
+
+# Validator docker ports
+- name: Task Set validator docker ports
+  set_fact:
+    docker_tendermint_ports: "{{ validator_docker_ports }}"
+
+- name: Task Create babylon Docker Container
+  docker_container:
+    name: babylon
+    image: "{{ tendermint_image }}"
+    state: started
+    memory: "{{ tendermint_docker_memory_limit }}"
+    memory_swap: "{{ tendermint_docker_memory_limit }}"
+    restart_policy: unless-stopped
+    restart: "{{ cfg_changed | bool }}"
+    networks:
+      - name: "babylon-validator-net"
+    ulimits:
+      - nofile:65535:65535
+    networks_cli_compatible: true
+    ports: "{{ validator_docker_ports }}"
+    env:
+      SERVICE_SCHEME: http
+      SERVICE_HOST: "localhost"
+    detach: true
+    volumes:
+      - "{{ tendermint_host_config_mount }}:{{ tendermint_docker_config_mount }}"
+      - "{{ tendermint_host_data_mount }}:{{ tendermint_docker_data_mount }}"
+      - "{{ tendermint_host_wasm_mount }}:{{ tendermint_docker_wasm_mount }}"
+      - "{{ tendermint_host_keys_mount }}:{{ tendermint_docker_keys_mount }}"
+    command: "babylond start"
+
+- name: Set EOTS docker ports
+  ansible.builtin.set_fact:
+    docker_eots_ports: "{{ eots_manager_ports }}"
+
+- name: Set finality provider docker ports
+  ansible.builtin.set_fact:
+    docker_finality_provider_ports: "{{ finality_provider_ports }}"
+
+- name: Check for eots-config file
+  ansible.builtin.stat:
+    path: "{{ tendermint_host_config_mount }}/eots/eotsd.conf"
+  register: eotsd_config_present
+
+- name: Check for fpd-config file
+  ansible.builtin.stat:
+    path: "{{ tendermint_host_config_mount }}/finality-provider/fpd.conf"
+  register: fpd_config_present
+
+- name: Initialise eots manager container
+  become_user: "root"
+  become: true
+  community.docker.docker_container:
+    name: "{{ eots_manager_name }}"
+    image: "{{ finality_provider_docker_image }}"
+    state: started
+    memory: "{{ tendermint_docker_memory_limit }}"
+    memory_swap: "{{ tendermint_docker_memory_limit }}"
+    restart_policy: unless-stopped
+    networks:
+      - name: "babylon-validator-net"
+    networks_cli_compatible: true
+    ulimits:
+      - nofile:65535:65535
+    volumes:
+      - "{{ eots_manager_host_mount }}:{{ eots_manager_docker_mount }}"
+    ports: "{{ docker_eots_ports }}"
+    command: >
+      eotsd init
+  when: not eotsd_config_present.stat.exists
+
+- name: Render configs for {{ eots_manager_name }}
+  become_user: root
+  become: true
+  ansible.builtin.template:
+    src: tendermint/{{ item }}
+    dest: "{{ eots_manager_host_mount }}/{{ item }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  with_items:
+    - eotsd.conf
+  register: eotsd_cfg
+
+- name: Detect if eots config has changed
+  ansible.builtin.set_fact:
+    eotsd_cfg_changed: "{{ eotsd_cfg.changed | bool }}"
+
+- name: Render configs for {{ finality_provider_name }}
+  become_user: root
+  become: true
+  ansible.builtin.template:
+    src: tendermint/{{ item }}
+    dest: "{{ finality_provider_host_mount }}/{{ item }}"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  with_items:
+    - fpd.conf
+  register: fpd_cfg
+
+- name: Start eots manager container
+  become_user: "root"
+  become: true
+  community.docker.docker_container:
+    name: "{{ eots_manager_name }}"
+    image: "{{ finality_provider_docker_image }}"
+    state: started
+    memory: "{{ tendermint_docker_memory_limit }}"
+    memory_swap: "{{ tendermint_docker_memory_limit }}"
+    restart_policy: unless-stopped
+    restart: "{{ eotsd_cfg_changed | bool }}"
+    networks:
+      - name: "babylon-validator-net"
+    networks_cli_compatible: true
+    ulimits:
+      - nofile:65535:65535
+    volumes:
+      - "{{ eots_manager_host_mount }}:{{ eots_manager_docker_mount }}"
+    ports: "{{ docker_eots_ports }}"
+    command: >
+      eotsd start
+
+- name: Initialise finality provider container
+  become_user: "root"
+  become: true
+  community.docker.docker_container:
+    name: "{{ finality_provider_name }}"
+    image: "{{ finality_provider_docker_image }}"
+    state: started
+    memory: "{{ tendermint_docker_memory_limit }}"
+    memory_swap: "{{ tendermint_docker_memory_limit }}"
+    restart_policy: unless-stopped
+    networks:
+      - name: "babylon-validator-net"
+    networks_cli_compatible: true
+    ulimits:
+      - nofile:65535:65535
+    volumes:
+      - "{{ finality_provider_host_mount }}:{{ finality_provider_docker_mount }}"
+      - "{{ finality_provider_host_keys_mount }}:{{ finality_provider_docker_keys_mount }}"
+    ports: "{{ docker_finality_provider_ports }}"
+    command: >
+      fpd init
+  when: not fpd_config_present.stat.exists
+
+- name: Detect if eots config has changed
+  ansible.builtin.set_fact:
+    fpd_cfg_changed: "{{ fpd_cfg.changed | bool }}"
+
+- name: Start finality provider container
+  become_user: "root"
+  become: true
+  community.docker.docker_container:
+    name: "{{ finality_provider_name }}"
+    image: "{{ finality_provider_docker_image }}"
+    state: started
+    memory: "{{ tendermint_docker_memory_limit }}"
+    memory_swap: "{{ tendermint_docker_memory_limit }}"
+    restart_policy: unless-stopped
+    restart: "{{ fpd_cfg_changed | bool }}"
+    networks:
+      - name: "babylon-validator-net"
+    networks_cli_compatible: true
+    ulimits:
+      - nofile:65535:65535
+    volumes:
+      - "{{ finality_provider_host_mount }}:{{ finality_provider_docker_mount }}"
+      - "{{ finality_provider_host_keys_mount }}:{{ finality_provider_docker_keys_mount }}"
+    ports: "{{ docker_finality_provider_ports }}"
+    command: >
+      fpd start
