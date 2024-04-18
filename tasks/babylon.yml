@@ -121,7 +121,7 @@
 
 - name: Task Create babylon Docker Container
   docker_container:
-    name: babylon
+    name: "{{ tendermint_docker_container_name }}"
     image: "{{ tendermint_image }}"
     state: started
     memory: "{{ tendermint_docker_memory_limit }}"

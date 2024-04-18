@@ -2,6 +2,10 @@
 - hosts: all
 
   tasks:
+    - name: Load secret variables
+      ansible.builtin.include_vars: secrets.yml
+      tags: [always]
+
     - name: Include network specific vars
       ansible.builtin.include_vars: network.yml
       tags: [always]
@@ -54,3 +58,7 @@
     - name: Include task monitoring
       include_tasks: tasks/monitoring.yml
       tags: monitoring  
+
+    - name: Install watchdog
+      ansible.builtin.import_tasks: tasks/watchdog.yml
+      tags: watchdog

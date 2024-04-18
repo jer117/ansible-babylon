@@ -9,6 +9,10 @@ tendermint_image: "jer117/babylon:v0.8.5-1"
 finality_provider_docker_image: "jer117/finality-provider:v0.1.0-1"
 tenderduty_monitoring_image: "ghcr.io/blockpane/tenderduty:latest"
 
+# Watchdog vars
+container_watchdog_docker_image: "jer117/watchdog-container:v0.0.3"
+container_watchdog_container_name: "watchdog-container"
+
 network: "testnet"
 
 # Custom flag for tendermint command
