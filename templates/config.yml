@@ -39,9 +39,9 @@ telegram:
   # Alert via telegram? Note: also supersedes chain-specific settings
   enabled: yes
   # API key ... talk to @BotFather
-  api_key: ''
+  api_key: '{{ telegram_bot_token }}'
   # The group ID for the chat where messages will be sent. Google how to find this, will include better info later.
-  channel: ""
+  channel: "{{ telegram_chat_id }}"
 
 # Slack settings
 slack:
@@ -110,8 +110,8 @@ chains:
       # Telegram settings
       telegram:
         enabled: yes
-        api_key: "" # uses default if blank
-        channel: "" # uses default if blank
+        api_key: "{{ telegram_bot_token }}" # uses default if blank
+        channel: "{{ telegram_chat_id }}" # uses default if blank
 
       # Slack settings
       slack:
