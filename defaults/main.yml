@@ -5,8 +5,8 @@
 tendermint_docker_container_name: "babylon"
 tendermint_binary_name: "babylond"
 
-tendermint_image: "jer117/babylon:v0.8.5-1"
-finality_provider_docker_image: "jer117/finality-provider:v0.1.0-1"
+tendermint_image: "jer117/docker-babylon:v1.0.0-rc.3"
+finality_provider_docker_image: "jer117/finality-provider:v0.14.3"
 tenderduty_monitoring_image: "ghcr.io/blockpane/tenderduty:latest"
 
 # Watchdog vars
