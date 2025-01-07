@@ -5,8 +5,8 @@
 tendermint_docker_container_name: "babylon"
 tendermint_binary_name: "babylond"
 
-tendermint_image: "jer117/docker-babylon:v1.0.0-rc.3"
-finality_provider_docker_image: "jer117/finality-provider:v0.14.3"
+tendermint_image: "jer117/docker-babylon:v1.0.0-rc.4"
+finality_provider_docker_image: "jer117/finality-provider:v0.15.0"
 tenderduty_monitoring_image: "ghcr.io/blockpane/tenderduty:latest"
 
 # Watchdog vars
@@ -70,9 +70,6 @@ tendermint_private_peer_ids: "{{ networks.testnet.private_peer_ids | default('')
 tendermint_unconditional_peer_ids: "{{ networks.testnet.unconditional_peer_ids | default('') }}"
 tendermint_max_num_inbound_peers: 320
 tendermint_max_num_outbound_peers: 40
-tendermint_handshake_timeout: 10s
-tendermint_dial_timeout: 3s
-tendermint_persistent_peers_max_dial_period: 1s
 # Tendermint app config - grpc
 tendermint_grpc_web_enable: true
 tendermint_grpc_max_recv_msg_size: 10485760
@@ -96,13 +93,11 @@ tendermint_max_body_bytes: 1000000
 tendermint_max_header_bytes: 1048576
 # Tendermint config - mempool
 tendermint_mempool_size: 10000
-tendermint_mempool_max_txs_bytes: 1073741824
-tendermint_mempool_max_tx_bytes: 1048576
+tendermint_mempool_max_tx_bytes: 10485760
 tendermint_mempool_cache_size: 10000
 # Tendermint config - consensus
 tendermint_create_empty_blocks: true
 tendermint_create_empty_blocks_interval: "0s"
-tendermint_double_sign_check_height: 10
 tendermint_peer_gossip_sleep_duration: 100ms
 tendermint_peer_query_maj23_sleep_duration: 2s
 tendermint_skip_timeout_commit: false
@@ -114,6 +109,12 @@ tendermint_timeout_prevote: 1s
 tendermint_timeout_prevote_delta: 500ms
 tendermint_timeout_propose: 3s
 tendermint_timeout_propose_delta: 500ms
+
+tendermint_persistent_peers_max_dial_period: "30s"
+tendermint_dial_timeout: "10s"
+tendermint_handshake_timeout: "20s"
+tendermint_double_sign_check_height: 0
+tendermint_mempool_max_txs_bytes: 200000
 
 # Node inventory config
 validator_address: "zetavaloper1vk6t4nr8nfnd0etzer4sp29glg22rvmqf5hwm4"

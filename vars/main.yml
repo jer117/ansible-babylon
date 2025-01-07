@@ -4,7 +4,6 @@ tendermint_host_data_mount: "/data/babylon"
 tendermint_host_wasm_mount: "/root/.babylond/wasm"
 tendermint_host_keys_mount: "/root/.babylond/keyring-test"
 
-tendermint_timeout_commit: "5s"
 tendermint_max_num_inbound_peers: 100
 tendermint_max_num_outbound_peers: 100
 tendermint_recv_rate: 22020096
