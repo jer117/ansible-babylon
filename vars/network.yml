@@ -11,9 +11,11 @@ networks:
     genesis_is_archive_file: false
     grpc_web_enable: false
     public_rpc_servers:
-      - https://rpc.testnet5.babylonchain.io:443
-      - https://rpc.testnet5.babylonchain.io:443
+      - https://babylon-testnet-rpc.nodes.guru:443
+      - https://babylon-testnet-rpc.polkachu.com:443
     seed_nodes_list:
-      -
+      - be232be53f7ac3c4a6628f98becb48fd25df1adf@babylon-testnet-seed.nodes.guru:55706
+      - ade4d8bc8cbe014af6ebdf3cb7b1e9ad36f412c0@testnet-seeds.polkachu.com:20656
     persistent_peers:
-      -
+      - fe62e0a38eb7694080c83a84225a6bb33be01fed@babylon-testnet-rpc-pruned-1.nodes.guru:55706
+      - 4a3dd7deb4770c06e05849a4128fea1a7439a9d9@65.109.106.210:20656

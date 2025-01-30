@@ -26,18 +26,6 @@
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
-    - name: Add Docker repository
-      apt_repository:
-        repo: "deb [arch=arm64] https://download.docker.com/linux/ubuntu jammy stable"
-        state: present
-        update_cache: yes
-        filename: docker
-
-    - name: Install Docker
-      apt:
-        name: docker
-        state: present
-
     - name: Include main vars
       ansible.builtin.include_vars: main.yml
       tags: [always]

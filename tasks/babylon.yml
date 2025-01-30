@@ -78,16 +78,16 @@
     group: "root"
     mode: "0755"
   with_items:
-    - peers
-    - latest
-    - recover-account
-    - list-accounts
+    - peers.sh
+    - latest.sh
+    - recover-account.sh
+    - list-accounts.sh
 
 - name: Task Copy tendermint docker helper script
   become_user: root
   become: true
   template:
-    src: scripts/tendermint-container.j2
+    src: scripts/tendermint-container.sh.j2
     dest: /usr/local/bin/{{ tendermint_binary_name }}
     force: true
     owner: "root"
@@ -235,7 +235,7 @@
       - "{{ eots_manager_host_mount }}:{{ eots_manager_docker_mount }}"
     ports: "{{ docker_eots_ports }}"
     command: >
-      eotsd start
+      eotsd start --rpc-listener {{ eots_manager_name }}:12582
 
 - name: Initialise finality provider container
   become_user: "root"
@@ -285,4 +285,4 @@
       - "{{ finality_provider_host_keys_mount }}:{{ finality_provider_docker_keys_mount }}"
     ports: "{{ docker_finality_provider_ports }}"
     command: >
-      fpd start
+      fpd start --eots-pk {{ eots_pk }}
