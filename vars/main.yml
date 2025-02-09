@@ -10,7 +10,7 @@ tendermint_recv_rate: 22020096
 tendermint_send_rate: 22020096
 tendermint_flush_throttle_timeout: "10ms"
 
-watchdog_storage_warning: 85
+watchdog_storage_warning: 95
 watchdog_protocol_mem_limit: 90
 watchdog_frequency: 10
 
