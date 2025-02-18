@@ -5,7 +5,7 @@
 tendermint_docker_container_name: "babylon"
 tendermint_binary_name: "babylond"
 
-tendermint_image: "jer117/docker-babylon:v1.0.0-rc.4"
+tendermint_image: "jer117/docker-babylon:v1.0.0-rc.5"
 finality_provider_docker_image: "jer117/finality-provider:v0.15.0"
 tenderduty_monitoring_image: "ghcr.io/blockpane/tenderduty:latest"
 
