@@ -115,7 +115,7 @@ fatal terminating the finality-provider instance due to critical error
 ### Resolution Steps:
 1. Import EOTS key:
 ```bash
-eotsd keys add axol \
+eotsd keys add $MONIKER \
     --recover \
     --keyring-backend test \
     --rpc-client eots-manager:12582
